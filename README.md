@@ -1,5 +1,5 @@
  *Dalhousie University*\
- *Summer 2018*\
+ *Summer 2018*
 # CSCI 3120 - Operating Systems
  **Peter Sousa -  B00652064**\
  **Hamza Awan - B00638502**\
