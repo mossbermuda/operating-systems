@@ -27,14 +27,18 @@
  int results[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; 
 // default solution equals 1 (correct), 0 otherwise
  int solution = 1;
+// Sudoku Grid
+int sudokuGrid[9][9];
 
  int main(int argc, char **argv) {
  	pthread_t thread;
+ 	FILE *fPointer;
  	//Check if an arguement has been added to the program before continuing
  	if (argc == args) {
  		printf("Checking Solution...\n");
  		// Complete step 1 - 2 without threads
  		// STEP 1: read in file
+ 		printf("Opening File: %s\n", argv[1]);
 
  		// STEP 2: create thread to check columns validity
  		// STEP 3: create thread to check row validity
