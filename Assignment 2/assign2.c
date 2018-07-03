@@ -13,6 +13,7 @@
  #include <stdlib.h>
  #include <unistd.h>
  #include <pthread.h>
+ #include <string.h>
 
  #define args 2 // Number of arguements should equal 2 with the input file given
  #define threadCount 11 // Number of threads
@@ -33,49 +34,58 @@ int sudokuGrid[9][9];
  int main(int argc, char **argv) {
  	pthread_t thread;
  	FILE *fPointer;
- 	char ch;
- 	int num, row = 0, column = 0;
+ 	char ch, buffer[4];
+ 	int num, row = 0, column = 0, b = 0;
  	//Check if an arguement has been added to the program before continuing
  	if (argc == args) {
  		printf("Checking Solution...\n");
- 		// Complete step 1 - 2 without threads
- 		// STEP 1: read in file
+ 		// READ FILE INTO sudokuGrid 2D ARRAY
  		printf("Opening File: %s\n", argv[1]);
  		fPointer = fopen(argv[1], "r");
  		while(1) {
  			ch = fgetc(fPointer);
  			//end of file is read
  			if(ch == EOF) {
+ 				sudokuGrid[row][column] = atoi(buffer);
+ 				bzero(buffer, 4);
  				break;
  			}
  			// a blank character is read
  			else if(ch == ' ') {
+ 				sudokuGrid[row][column] = atoi(buffer);
  				column++;
+ 				bzero(buffer, 4);
+ 				b = 0;
  				continue;
  			}
  			// a newline character is read
  			else if(ch == '\n') {
+ 				sudokuGrid[row][column] = atoi(buffer);
+ 				bzero(buffer, 4);
+ 				b = 0;
  				row++;
  				column = 0;
  				continue;
  			}
  			// an integer is read and stored in sudokuGrid 2D array
  			else {
- 				num = atoi(&ch);
- 				sudokuGrid[row][column] = num;
+ 				buffer[b] = ch;
+ 				b++;
+
  			}
  		}
-
- 		for (int i = 0; i < 9; ++i) {
- 			for (int j = 0; j < 9; ++j) {
+ 		column = 0; row = 0;
+ 		// print 2D array
+ 		for (int i = 0; i < 9; i++) {
+ 			for (int j = 0; j < 9; j++) {
  				printf("%d ", sudokuGrid[i][j]);
  			}
  			printf("\n");
  		}
-
-
  		// STEP 2: create thread to check columns validity
+
  		// STEP 3: create thread to check row validity
+ 		
  		// STEP 4: create 9 threads to check each of the 9 subgrids for validity
 
 
