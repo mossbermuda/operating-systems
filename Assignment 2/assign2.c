@@ -33,6 +33,7 @@
  	//Check if an arguement has been added to the program before continuing
  	if (argc == args) {
  		printf("Checking Solution...\n");
+ 		// Complete step 1 - 2 without threads
  		// STEP 1: read in file
 
  		// STEP 2: create thread to check columns validity
