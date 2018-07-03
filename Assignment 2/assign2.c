@@ -33,12 +33,46 @@ int sudokuGrid[9][9];
  int main(int argc, char **argv) {
  	pthread_t thread;
  	FILE *fPointer;
+ 	char ch;
+ 	int num, row = 0, column = 0;
  	//Check if an arguement has been added to the program before continuing
  	if (argc == args) {
  		printf("Checking Solution...\n");
  		// Complete step 1 - 2 without threads
  		// STEP 1: read in file
  		printf("Opening File: %s\n", argv[1]);
+ 		fPointer = fopen(argv[1], "r");
+ 		while(1) {
+ 			ch = fgetc(fPointer);
+ 			//end of file is read
+ 			if(ch == EOF) {
+ 				break;
+ 			}
+ 			// a blank character is read
+ 			else if(ch == ' ') {
+ 				column++;
+ 				continue;
+ 			}
+ 			// a newline character is read
+ 			else if(ch == '\n') {
+ 				row++;
+ 				column = 0;
+ 				continue;
+ 			}
+ 			// an integer is read and stored in sudokuGrid 2D array
+ 			else {
+ 				num = atoi(&ch);
+ 				sudokuGrid[row][column] = num;
+ 			}
+ 		}
+
+ 		for (int i = 0; i < 9; ++i) {
+ 			for (int j = 0; j < 9; ++j) {
+ 				printf("%d ", sudokuGrid[i][j]);
+ 			}
+ 			printf("\n");
+ 		}
+
 
  		// STEP 2: create thread to check columns validity
  		// STEP 3: create thread to check row validity
