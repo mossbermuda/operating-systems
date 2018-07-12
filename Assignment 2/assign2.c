@@ -1,4 +1,4 @@
-/* assign1.c : 	Multithreaded Sudoku Solution Checker
+/* assign2.c : 	Multithreaded Sudoku Solution Checker
  * OBJECTIVE:	Read in a user file as input. Use 1 thread to check that each column contains digits 1 through 9.
  *				Use 1 thread to check that each row contains digits 1 through 9. Use 9 threads to check that each 3x3 subgrid contains digits 1 through 9
  *				Program uses 11 threads in total.
