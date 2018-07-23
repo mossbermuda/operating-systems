@@ -4,7 +4,7 @@
  *				If the doctor is sleeping the patient wakes up the doctor and begins being treated immediately.
  *				If the doctor is busy the patient must take a seat and wait till the doctor is free.
  *				Patients get coffee if they don't need treatment or there aren't enough seats left in the waiting area.
- *				The program uses threads to create the doctor and n patients. Semaphores and mutex locks are used to prevent deadlock.
+ *				The program uses threads to create the doctor and n patients. Mutex locks are used to prevent deadlock and protect resources.
  * Dalhousie University - July 12, 2018
  * CSCI 3120 - Operating Systems
  * Assignment 3 - The Doctor on Night Duty
@@ -17,44 +17,111 @@
  #include <unistd.h>
  #include <pthread.h>
  #include <string.h>
+ #include <semaphore.h>
 
  #define args 3 // Number of arguements should equal 2 with the input file given
- #define coffeeBreak 10 // Max time for a patient's coffee break
+ #define coffeeBreak 5 // Max time for a patient's coffee break
+ #define treatmentTime 7 // Max time for a patient's coffee break
 
- // Idle function for the doctor thread. This is the doctor's initial function and it called when no patients to help 
+ int patients = 0;
+ int finishedFlag = 0;
+ int seats = 0;
+ int doctorAvailable = 0;
+ int doctorTreating = 0;
+ pthread_mutex_t mutexPId = PTHREAD_MUTEX_INITIALIZER;
+ pthread_mutex_t mutexSeats = PTHREAD_MUTEX_INITIALIZER;
+ pthread_mutex_t mutexTreatment = PTHREAD_MUTEX_INITIALIZER;
+
+ void treatPatient();
+ void *beginNap();
+ void getCoffee(int id);
+ void *initPatient();
+ void getTreatment(int id);
+
+ 
+ // Idle function for the doctor thread. This is the doctor's initial function and it called when no patients to help
+ // function calls treatPatient() if doctorAvailable flag is changed 
  void *beginNap() {
- 	printf("Doctor Napping...\n");
+ 	printf("Doctor Sleeping...\n");
+ 	while (doctorAvailable == 0) {
+ 		// Sleep
+ 		// If no more patients to treat exit
+ 		if(finishedFlag == patients && finishedFlag != 0) {
+ 			exit(0);
+ 		}
+ 	}
+ 	treatPatient();
  	return NULL;
  }
 
 // Function will occur when a patient obtains a lock for the doctor, making the doctor unable to treat other patients or nap until the treatment is complete
  void treatPatient() {
-
+ 	int treatmentLength = rand() % treatmentTime;
+ 	treatmentLength += 3;
+ 	pthread_mutex_lock (&mutexSeats);
+ 	seats++;
+ 	printf("Doctor treating patient for %d seconds. Seats Left = %d\n", treatmentLength, seats);
+ 	pthread_mutex_unlock (&mutexSeats);
+ 	printf("Patient %d getting treated\n", doctorTreating);
+ 	sleep(treatmentLength);
+ 	doctorAvailable = 0;
+ 	doctorTreating = 0;
+ 	pthread_mutex_unlock (&mutexTreatment);
+ 	finishedFlag++;
+	printf("Patients left: %d\n", (patients - finishedFlag));
+ 	beginNap();
  }
 
 // Function initially called by each patient. Waits for a random amount of time then attempts to seek help from the doctor
- void *getCoffee(void *vargp) {
- 	int *myid = (int *)vargp;
+ void *initPatient() {
+ 	pthread_mutex_lock (&mutexPId);
+ 	patients++;
+ 	int id = patients;
+ 	pthread_mutex_unlock (&mutexPId);
  	int breakLength = rand() % coffeeBreak;
- 	printf("Patient %d getting coffee for %d seconds\n", *myid, breakLength);
+ 	breakLength++;
+ 	printf("\tPatient %d drinking coffee for %d seconds\n", id, breakLength);
  	sleep(breakLength);
- 	printf("Patient %d break over\n", *myid);
+ 	getTreatment(id);
  	return NULL;
  }
 
-// Function to be called after patient is finished having coffee. 
-// The patient will enter the queue of waiting chairs, if they are first in the queue they will seek treatment when the doctor is available
- void enterWaitingRoom() {
- 	
+// No more seats available so patient takes another coffee break
+ void getCoffee(int id) {
+ 	int breakLength = rand() % coffeeBreak;
+ 	breakLength++;
+ 	printf("\tPatient %d drinking coffee for %d seconds\n", id, breakLength);
+ 	sleep(breakLength);
+ 	getTreatment(id);
  }
 
-// Patient will obtain a lock for the doctor and will get treatment for some random period of time. Once complete they will return to having coffee.
- void getTreatment() {
- 	
+// Patient Attempts to get treatment
+ void getTreatment(int id) {
+ 	if(seats <= 0) {
+ 		// no seats left in waiting room
+ 		printf("\t\t\tPatient %d will try again.\n", id);
+ 		getCoffee(id);
+ 	}
+ 	else {
+ 		// Get a seat and wait for treatment
+ 		pthread_mutex_lock (&mutexSeats);
+ 		if(seats <= 0) {
+ 			pthread_mutex_unlock (&mutexSeats);
+ 			getCoffee(id);
+ 		}
+ 		else {
+ 			seats--;
+	 		printf("\t\tPatient %d waiting. Seats Left = %d\n", id, seats);
+	 		pthread_mutex_unlock (&mutexSeats);
+		 	pthread_mutex_lock (&mutexTreatment);
+		 	doctorAvailable = 1;
+		 	doctorTreating = id;
+ 		}
+ 	}
  }
 
  int main(int argc, char **argv) {
- 	pthread_t thread;
+ 	pthread_t doctorThread, patientThread;
  	int patientCount;
  	int seatCount;
  	int threadID;
@@ -67,20 +134,22 @@
  		bzero(buffer, 16);
  		strcpy(buffer, argv[2]);
  		seatCount = atoi(buffer);
+ 		seats = seatCount;
  		// Continue if values for patient and seat count are valid
  		if(patientCount > 0 && seatCount > 0) {
  			// Print argument values
  			printf("Patient Count: %d\nSeat Count: %d\n", patientCount, seatCount);
 
  			//Initalize Doctor pthread
- 			pthread_create(&thread, NULL, beginNap, (void *)&threadID);
- 			
+ 			pthread_create(&doctorThread, NULL, beginNap, NULL);
 
  			//Initalize Patient Threads
- 			for (threadID = 0; threadID < patientCount; threadID++) {
- 				pthread_create(&thread, NULL, getCoffee, (void *)&threadID);
- 				pthread_join(thread, NULL);
+ 			for (threadID = 1; threadID <= patientCount; threadID++) {
+ 				pthread_create(&patientThread, NULL, initPatient, NULL);
  			}
+ 			
+ 			pthread_join(patientThread, NULL);
+ 			pthread_join(doctorThread, NULL);
 
  			pthread_exit(NULL);
 
